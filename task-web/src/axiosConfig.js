@@ -2,8 +2,11 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  //baseURL: 'http://localhost:8080/api',
+  baseURL: process.env.REACT_APP_AXIOS_BASE_URL,
 });
+
+console.log("App Base URL ->", api.defaults.baseURL);
 
 api.interceptors.request.use(
   (config) => {
