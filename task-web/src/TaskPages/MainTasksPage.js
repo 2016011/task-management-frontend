@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Select, MenuItem  } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import axios from 'axios';
+
+import api from '../axiosConfig';
 
 function MainTasksPage() {
     const [tasks, setTasks] = useState([]);
@@ -12,7 +13,7 @@ function MainTasksPage() {
 
   useEffect(() => {
     // Fetch tasks on component
-    axios.get('http://localhost:8080/api/tasks/all')
+    api.get('/tasks/all')
       .then(response => {
         setTasks(response.data);
       })
@@ -29,7 +30,7 @@ function MainTasksPage() {
 const handleDelete = (taskId) => {
     console.log("Delete Task:", taskId);
   
-    axios.delete(`http://localhost:8080/api/tasks/delete/${taskId}`)
+    api.delete(`/tasks/delete/${taskId}`)
       .then(() => {
         setTasks(tasks.filter(task => task.taskId !== taskId));
         console.log("Task deleted successfully");
@@ -46,7 +47,7 @@ const handleDelete = (taskId) => {
   };
 
   const handleEditOpen = (taskId) => {
-    axios.get(`http://localhost:8080/api/tasks/get/${taskId}`)
+    api.get(`/tasks/get/${taskId}`)
       .then(response => {
         setNewTask(response.data);
         setIsEdit(true); // Set to true for edit
@@ -73,7 +74,7 @@ const handleDelete = (taskId) => {
   const handleSubmit = () => {
     if (isEdit) {
       // Update existing task
-      axios.put(`http://localhost:8080/api/tasks/update`, newTask)
+      api.put(`/tasks/update`, newTask)
         .then(response => {
           setTasks(tasks.map(task => task.taskId === newTask.taskId ? response.data : task));
           handleClose();
@@ -83,7 +84,7 @@ const handleDelete = (taskId) => {
         });
     } else {
       // Create new task
-      axios.post('http://localhost:8080/api/tasks/create', newTask)
+      api.post('/tasks/create', newTask)
         .then(response => {
           setTasks([...tasks, response.data]);
           handleClose();
