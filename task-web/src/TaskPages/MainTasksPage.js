@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Select, MenuItem  } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
@@ -8,6 +8,7 @@ function MainTasksPage() {
     const [tasks, setTasks] = useState([]);
     const [open, setOpen] = useState(false);
     const [newTask, setNewTask] = useState({ taskId: null, title: "", description: "", status: "Incomplete" });
+    const [isEdit, setIsEdit] = useState(false);
 
   useEffect(() => {
     // Fetch tasks on component
@@ -20,18 +21,40 @@ function MainTasksPage() {
       });
   }, []);
 
-  const handleEdit = (taskId) => {
-    console.log("Edit Task:", taskId);
+//   const handleEdit = (taskId) => {
+//     console.log("Edit Task:", taskId);
     
-  };
+//   };
 
-  const handleDelete = (taskId) => {
+const handleDelete = (taskId) => {
     console.log("Delete Task:", taskId);
-   
+  
+    axios.delete(`http://localhost:8080/api/tasks/delete/${taskId}`)
+      .then(() => {
+        setTasks(tasks.filter(task => task.taskId !== taskId));
+        console.log("Task deleted successfully");
+      })
+      .catch(error => {
+        console.error("There was an error deleting the task!", error);
+      });
   };
 
   const handleOpen = () => {
     setOpen(true);
+    setIsEdit(false); 
+    setNewTask({ taskId: null, title: "", description: "", status: "Incomplete" });
+  };
+
+  const handleEditOpen = (taskId) => {
+    axios.get(`http://localhost:8080/api/tasks/get/${taskId}`)
+      .then(response => {
+        setNewTask(response.data);
+        setIsEdit(true); // Set to true for edit
+        setOpen(true);
+      })
+      .catch(error => {
+        console.error("There was an error fetching the task details!", error);
+      });
   };
 
   const handleClose = () => {
@@ -48,14 +71,27 @@ function MainTasksPage() {
   };
 
   const handleSubmit = () => {
-    axios.post('http://localhost:8080/api/tasks/create', newTask)
-      .then(response => {
-        setTasks([...tasks, response.data]);
-        handleClose();
-      })
-      .catch(error => {
-        console.error("There was an error creating the task!", error);
-      });
+    if (isEdit) {
+      // Update existing task
+      axios.put(`http://localhost:8080/api/tasks/update`, newTask)
+        .then(response => {
+          setTasks(tasks.map(task => task.taskId === newTask.taskId ? response.data : task));
+          handleClose();
+        })
+        .catch(error => {
+          console.error("There was an error updating the task!", error);
+        });
+    } else {
+      // Create new task
+      axios.post('http://localhost:8080/api/tasks/create', newTask)
+        .then(response => {
+          setTasks([...tasks, response.data]);
+          handleClose();
+        })
+        .catch(error => {
+          console.error("There was an error creating the task!", error);
+        });
+    }
   };
 
 
@@ -66,7 +102,7 @@ function MainTasksPage() {
       </Button>
 
       <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Create New Task</DialogTitle>
+        <DialogTitle>{isEdit ? "Edit Task" : "Create New Task"}</DialogTitle>
         <DialogContent>
           <TextField
             margin="dense"
@@ -103,7 +139,7 @@ function MainTasksPage() {
             Cancel
           </Button>
           <Button onClick={handleSubmit} color="primary">
-            Submit
+            {isEdit ? "Update" : "Submit"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -121,15 +157,15 @@ function MainTasksPage() {
         </TableHead>
         <TableBody>
           {tasks.map((task) => (
-            <TableRow key={task.id}>
+            <TableRow key={task.taskId}>
               <TableCell>{task.title}</TableCell>
               <TableCell>{task.description}</TableCell>
               <TableCell>{task.status}</TableCell>
               <TableCell>
-                <IconButton onClick={() => handleEdit(task.id)} color="primary">
+                <IconButton onClick={() => handleEditOpen(task.taskId)} color="primary">
                   <EditIcon />
                 </IconButton>
-                <IconButton onClick={() => handleDelete(task.id)} color="secondary">
+                <IconButton onClick={() => handleDelete(task.taskId)} color="secondary">
                   <DeleteIcon />
                 </IconButton>
               </TableCell>
